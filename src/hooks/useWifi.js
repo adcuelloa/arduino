@@ -35,20 +35,22 @@ export function useWifi() {
   const MIN_SPEED = 0;
 
   // 🔧 CONFIGURACIÓN: Detección automática de protocolo y URL
-  // En desarrollo (localhost): usa ws://
-  // En producción (HTTPS): usa wss:// automáticamente
+  // Cuando usas el ESP32 en modo AP (Access Point), SIEMPRE usa ws://192.168.4.1/ws
+  // independientemente de si la PWA está instalada o desde dónde se descargó
   const getWebSocketURL = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const hostname = window.location.hostname;
-    
-    // Si estamos en localhost/desarrollo, usar la IP del ESP32
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Si estamos en desarrollo local (servidor de desarrollo)
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'ws://192.168.4.1/ws';
     }
-    
-    // En producción, construir URL con el mismo host
-    // Asumiendo que el ESP32 está accesible en el mismo dominio/IP
-    return `${protocol}//${hostname}/ws`;
+
+    // Para PWA instalada o en producción:
+    // Siempre intenta conectar directamente al ESP32 en su IP de modo AP
+    // El usuario debe conectar su dispositivo a la red WiFi del ESP32 primero
+    return 'ws://192.168.4.1/ws';
+
+    // NOTA: Si tu ESP32 está en modo Station (conectado a tu router),
+    // cambia la línea anterior a la IP que le asigna tu router, ejemplo:
+    // return 'ws://192.168.1.100/ws';
   };
 
   const WEBSOCKET_URL = getWebSocketURL();
