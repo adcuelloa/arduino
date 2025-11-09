@@ -1,0 +1,108 @@
+/* ===== SPEED PANEL (Velocímetro digital) ===== */
+.speed-panel {
+  background: radial-gradient(circle at 30% 30%, #2a2a2a, #1a1a1a);
+  border-radius: clamp(0.75rem, 1.5vw, 1.25rem);
+  padding: clamp(0.75rem, 1.5vw, 1.25rem);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.6),
+    inset 0 2px 6px rgba(255, 255, 255, 0.03),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 1vw, 0.75rem);
+}
+
+.speed-header {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.3rem, 0.6vw, 0.5rem);
+  opacity: 0.7;
+}
+
+.speed-icon {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: #00b4d8;
+  filter: drop-shadow(0 0 6px rgba(0, 180, 216, 0.6));
+}
+
+.speed-label {
+  font-size: clamp(0.625rem, 1.2vw, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #00b4d8;
+  text-shadow: 0 0 8px rgba(0, 180, 216, 0.5);
+}
+
+/* Display digital estilo velocímetro */
+.speed-display {
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
+  font-weight: 900;
+  text-align: center;
+  line-height: 1;
+  color: #00b4d8;
+  text-shadow:
+    0 0 15px rgba(0, 180, 216, 0.8),
+    0 0 30px rgba(0, 180, 216, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+  font-family: 'Courier New', monospace;
+  padding: clamp(0.5rem, 1vw, 0.75rem);
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: clamp(0.4rem, 0.8vw, 0.6rem);
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  min-width: clamp(60px, 12vw, 80px);
+}
+
+.speed-controls {
+  display: flex;
+  gap: clamp(0.4rem, 0.8vw, 0.6rem);
+  width: 100%;
+}
+
+/* Botones +/- */
+.btn-speed-up,
+.btn-speed-down {
+  flex: 1;
+  min-height: clamp(35px, 6vw, 45px);
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: 900;
+}
+
+.btn-speed-up {
+  background: linear-gradient(135deg, #06d6a0 0%, #04a777 100%);
+}
+
+.btn-speed-up:hover:not(:disabled) {
+  background: linear-gradient(135deg, #04a777 0%, #038866 100%);
+  box-shadow:
+    0 8px 20px rgba(6, 214, 160, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.btn-speed-down {
+  background: linear-gradient(135deg, #e63946 0%, #c92a35 100%);
+}
+
+.btn-speed-down:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c92a35 0%, #a61e2a 100%);
+  box-shadow:
+    0 8px 20px rgba(230, 57, 70, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive */
+@media (max-aspect-ratio: 1/1) {
+  .speed-panel {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .speed-display {
+    font-size: clamp(2rem, 5vw, 2.5rem);
+  }
+}

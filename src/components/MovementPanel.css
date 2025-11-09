@@ -1,0 +1,159 @@
+/* ===== MOVEMENT PANEL (D-PAD físico) ===== */
+.movement-panel {
+  background: radial-gradient(circle at 30% 30%, #2a2a2a, #1a1a1a);
+  border-radius: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.7),
+    inset 0 3px 8px rgba(255, 255, 255, 0.03),
+    inset 0 -3px 10px rgba(0, 0, 0, 0.6);
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  position: relative;
+}
+
+.movement-header {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.4rem, 0.8vw, 0.6rem);
+  opacity: 0.7;
+}
+
+.movement-icon {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: #00b4d8;
+  filter: drop-shadow(0 0 6px rgba(0, 180, 216, 0.6));
+}
+
+.movement-label {
+  font-size: clamp(0.625rem, 1.2vw, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #00b4d8;
+  text-shadow: 0 0 8px rgba(0, 180, 216, 0.5);
+}
+
+/* D-Pad Grid */
+.movement-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  gap: clamp(0.4rem, 0.8vw, 0.6rem);
+  width: 100%;
+  max-width: clamp(220px, 20vw, 320px);
+  aspect-ratio: 1;
+}
+
+/* Botones direccionales */
+.btn-w,
+.btn-a,
+.btn-s,
+.btn-d {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Posiciones del D-Pad */
+.btn-w {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.btn-a {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.btn-s {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.btn-d {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+/* Botón STOP central - rojo grande */
+.btn-stop {
+  grid-column: 2;
+  grid-row: 2;
+  background: linear-gradient(135deg, #e63946 0%, #c92a35 100%);
+  font-size: clamp(0.875rem, 1.75vw, 1.125rem);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow:
+    0 6px 16px rgba(230, 57, 70, 0.6),
+    inset 0 1px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-stop:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c92a35 0%, #a61e2a 100%);
+  box-shadow:
+    0 8px 20px rgba(230, 57, 70, 0.7),
+    inset 0 1px 6px rgba(255, 255, 255, 0.25),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.btn-stop:active:not(:disabled) {
+  transform: translateY(3px) scale(0.95);
+  box-shadow:
+    0 3px 10px rgba(230, 57, 70, 0.5),
+    inset 0 1px 3px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Hover para botones direccionales */
+.btn-w:hover:not(:disabled),
+.btn-a:hover:not(:disabled),
+.btn-s:hover:not(:disabled),
+.btn-d:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
+  box-shadow:
+    0 8px 20px rgba(255, 255, 255, 0.1),
+    inset 0 2px 6px rgba(255, 255, 255, 0.15),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Estado activo (presionado) */
+.btn-w:active:not(:disabled),
+.btn-a:active:not(:disabled),
+.btn-s:active:not(:disabled),
+.btn-d:active:not(:disabled) {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+}
+
+/* Iconos/texto de los botones */
+.btn-w::after {
+  content: '▲';
+}
+.btn-s::after {
+  content: '▼';
+}
+.btn-a::after {
+  content: '◀';
+}
+.btn-d::after {
+  content: '▶';
+}
+.btn-stop::after {
+  content: 'STOP';
+}
+
+/* Responsive */
+@media (max-aspect-ratio: 1/1) {
+  .movement-grid {
+    max-width: clamp(220px, 45vw, 280px);
+  }
+}

@@ -1,0 +1,149 @@
+/* ===== COMMAND MONITOR (Pantalla LCD) ===== */
+.command-monitor {
+  background: linear-gradient(145deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
+  border-radius: clamp(0.6rem, 1.2vw, 1rem);
+  padding: clamp(0.75rem, 1.5vw, 1.25rem);
+  box-shadow:
+    inset 0 4px 12px rgba(0, 0, 0, 0.8),
+    inset 0 -1px 3px rgba(0, 180, 216, 0.1),
+    0 0 25px rgba(0, 180, 216, 0.2);
+  border: 2px solid rgba(0, 180, 216, 0.3);
+  display: flex;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  position: relative;
+  flex: 1;
+}
+
+/* Efecto de pantalla LCD */
+.command-monitor::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 180, 216, 0.03) 0px,
+    rgba(0, 180, 216, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.monitor-main {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  flex: 1;
+  min-width: 0;
+}
+
+.monitor-icon {
+  font-size: clamp(2rem, 4vw, 3rem);
+  color: #00b4d8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse-icon 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(0, 180, 216, 0.8));
+}
+
+@keyframes pulse-icon {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.monitor-content {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 0.5vw, 0.4rem);
+  flex: 1;
+  min-width: 0;
+}
+
+.monitor-label {
+  font-size: clamp(0.5rem, 1vw, 0.625rem);
+  color: rgba(0, 180, 216, 0.6);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(0, 180, 216, 0.4);
+}
+
+.monitor-command {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 900;
+  color: #00b4d8;
+  text-shadow:
+    0 0 15px rgba(0, 180, 216, 0.8),
+    0 0 30px rgba(0, 180, 216, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Courier New', monospace;
+  animation: command-flash 0.3s ease-out;
+  line-height: 1.2;
+}
+
+@keyframes command-flash {
+  0% {
+    color: #51cf66;
+    transform: scale(1.05);
+  }
+  100% {
+    color: #00b4d8;
+    transform: scale(1);
+  }
+}
+
+.monitor-history {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.3rem, 0.6vw, 0.5rem);
+  align-items: flex-end;
+  min-width: clamp(120px, 25vw, 180px);
+}
+
+.history-item {
+  font-size: clamp(0.625rem, 1.2vw, 0.75rem);
+  color: rgba(0, 180, 216, 0.7);
+  font-weight: 600;
+  padding: clamp(0.25rem, 0.5vw, 0.4rem) clamp(0.5rem, 1vw, 0.75rem);
+  background: rgba(0, 180, 216, 0.08);
+  border-radius: clamp(0.25rem, 0.5vw, 0.375rem);
+  border-left: 2px solid rgba(0, 180, 216, 0.4);
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(0, 180, 216, 0.3);
+  font-family: 'Courier New', monospace;
+  transition: all 0.3s ease;
+}
+
+/* Responsive portrait */
+@media (max-aspect-ratio: 1/1) {
+  .command-monitor {
+    flex-direction: column;
+    gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  }
+
+  .monitor-main {
+    width: 100%;
+  }
+
+  .monitor-history {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+}

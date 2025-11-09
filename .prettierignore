@@ -1,0 +1,3 @@
+# Ignore Arduino sketch files (prevent Prettier from formatting them)
+*.ino
+*.pde

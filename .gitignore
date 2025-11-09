@@ -1,0 +1,63 @@
+# Node
+node_modules/
+.pnpm-store/
+
+# Vite / build output
+/dist/
+/build/
+/.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+.env.*
+
+# Prettier / ESLint cache
+.prettiercache
+.eslintcache
+
+# Arduino / PlatformIO build artifacts
+/.pioenvs/
+/.pio/
+*.elf
+*.bin
+*.hex
+
+# Generated files
+dist/
+build/
+
+# Misc
+coverage/
+coverage-final.json
+reports/
+
+# Lockfiles (if you want them excluded, otherwise keep them committed)
+# pnpm-lock.yaml
+# package-lock.json
+
+# Ignore compiled C/C++ object files
+*.o
+*.obj
+*.exe
+*.dll
+
+# Ignore temporary files
+*.tmp
+*.temp
+*~

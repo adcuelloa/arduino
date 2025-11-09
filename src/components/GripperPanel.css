@@ -1,0 +1,121 @@
+/* ===== GRIPPER PANEL (Control de pinza) ===== */
+.gripper-panel {
+  background: radial-gradient(circle at 30% 30%, #2a2a2a, #1a1a1a);
+  border-radius: clamp(1rem, 2vw, 1.5rem);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.7),
+    inset 0 3px 8px rgba(255, 255, 255, 0.03),
+    inset 0 -3px 10px rgba(0, 0, 0, 0.6);
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+}
+
+.gripper-header {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.4rem, 0.8vw, 0.6rem);
+  opacity: 0.7;
+}
+
+.gripper-icon {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: #00b4d8;
+  filter: drop-shadow(0 0 6px rgba(0, 180, 216, 0.6));
+}
+
+.gripper-label {
+  font-size: clamp(0.625rem, 1.2vw, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #00b4d8;
+  text-shadow: 0 0 8px rgba(0, 180, 216, 0.5);
+}
+
+.gripper-controls {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.75rem, 1.5vw, 1.25rem);
+  width: 100%;
+}
+
+/* Botones de la pinza */
+.btn-gripper-open,
+.btn-gripper-close {
+  width: 100%;
+  min-height: clamp(50px, 8vh, 65px);
+  font-size: clamp(0.875rem, 1.75vw, 1.125rem);
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.2rem, 0.4vw, 0.3rem);
+  border-radius: clamp(0.625rem, 1.25vw, 1rem);
+}
+
+.btn-gripper-open {
+  background: linear-gradient(135deg, #06d6a0 0%, #04a777 100%);
+}
+
+.btn-gripper-open:hover:not(:disabled) {
+  background: linear-gradient(135deg, #04a777 0%, #038866 100%);
+  box-shadow:
+    0 8px 20px rgba(6, 214, 160, 0.4),
+    inset 0 2px 6px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.btn-gripper-close {
+  background: linear-gradient(135deg, #e63946 0%, #c92a35 100%);
+}
+
+.btn-gripper-close:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c92a35 0%, #a61e2a 100%);
+  box-shadow:
+    0 8px 20px rgba(230, 57, 70, 0.4),
+    inset 0 2px 6px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.btn-gripper-open::before,
+.btn-gripper-close::before {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+/* Iconos emoji dentro de los botones */
+.btn-gripper-open .gripper-emoji {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.btn-gripper-close .gripper-emoji {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+/* Texto descriptivo */
+.gripper-button-text {
+  font-size: clamp(0.75rem, 1.5vw, 0.875rem);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+
+/* Responsive */
+@media (max-aspect-ratio: 1/1) {
+  .gripper-controls {
+    flex-direction: row;
+  }
+
+  .btn-gripper-open,
+  .btn-gripper-close {
+    flex: 1;
+    min-height: clamp(70px, 12vh, 90px);
+  }
+}
