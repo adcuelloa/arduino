@@ -50,6 +50,7 @@ export default [
       // Desactivar reglas obsoletas en React 17+ (New JSX Transform)
       'react/jsx-uses-react': 'off',
       'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
 
       // Regla común: permitir archivos .js, .jsx, .ts y .tsx para contener JSX
       'react/jsx-filename-extension': [1, { extensions: ['.js', '.jsx', '.ts', '.tsx'] }],

@@ -8,6 +8,57 @@
   padding: clamp(0.5rem, 2vw, 1.5rem);
 }
 
+/* ===== MENSAJE DE ORIENTACIÓN ===== */
+.orientation-warning {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  padding: 2rem;
+}
+
+.orientation-content {
+  text-align: center;
+  color: #fff;
+  max-width: 400px;
+}
+.orientation-content-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+
+  && .rotate-icon {
+    animation: rotate-phone 4s linear infinite;
+  }
+}
+
+@keyframes rotate-phone {
+  0%,
+  100% {
+    transform: rotate(45deg);
+  }
+  50% {
+    transform: rotate(225deg);
+  }
+}
+
+.orientation-content h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #00d4ff;
+}
+
+.orientation-content p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
 /* ===== CONTROL REMOTO (16:9) ===== */
 .remote-control {
   width: min(100vw - 2rem, calc((100vh - 2rem) * 16 / 9));

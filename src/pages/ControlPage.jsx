@@ -1,6 +1,6 @@
 import './ControlPage.css';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ConnectionPanel } from '../components/ConnectionPanel';
 import { SpeedPanel } from '../components/SpeedPanel';
 import { MovementPanel } from '../components/MovementPanel';
@@ -12,8 +12,29 @@ import { useBLE } from '../hooks/useBLE';
 import { useWifi } from '../hooks/useWifi';
 import { useKeyboardControls } from '../hooks/useKeyboardControls';
 
+import { MdScreenRotation } from 'react-icons/md';
+import Ges2lIcon from '../components/icons/Ges2lIcon';
+
 export default function ControlPage() {
   const [commMode, setCommMode] = useState('wifi');
+  const [isPortrait, setIsPortrait] = useState(false);
+
+  // Detectar orientación del dispositivo
+  useEffect(() => {
+    const checkOrientation = () => {
+      const portrait = window.innerHeight > window.innerWidth;
+      setIsPortrait(portrait);
+    };
+
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   const bleHook = useBLE();
   const wifiHook = useWifi();
@@ -59,6 +80,22 @@ export default function ControlPage() {
     }
     setCommMode(newMode);
   };
+
+  // Mostrar mensaje si está en orientación vertical
+  if (isPortrait) {
+    return (
+      <div className="orientation-warning">
+        <div className="orientation-content">
+          <div className="orientation-content-icons">
+            <Ges2lIcon color="#fff" size={64} />
+            <MdScreenRotation className="rotate-icon" size={64} />
+          </div>
+          <h2>Gira tu dispositivo</h2>
+          <p>Esta aplicación funciona mejor en orientación horizontal</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
