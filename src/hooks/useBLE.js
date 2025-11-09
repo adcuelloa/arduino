@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 
 const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+const NOTIFY_UUID = '12345678-1234-5678-1234-56789abcdef0'; // Para recibir ACKs
 
 const KEY_MAP = {
   w: 'W',
@@ -17,24 +18,37 @@ export function useBLE() {
   const [speedLevel, setSpeedLevel] = useState(5);
   const [lastCommand, setLastCommand] = useState('');
   const [commandHistory, setCommandHistory] = useState([]);
+  const [controlMode, setControlMode] = useState('hold'); // 'hold' o 'toggle'
 
   const deviceRef = useRef(null);
   const charRef = useRef(null);
+  const charNotifyRef = useRef(null); // Característica NOTIFY para ACKs
   const writeInProgress = useRef(false);
   const pendingCommand = useRef(null); // Solo UNO pendiente
   const movementActive = useRef(false);
   const keyHeld = useRef({});
+  const currentToggleCommand = useRef(null); // Comando activo en modo toggle
+  const lastEnqueueTime = useRef(0); // Timestamp del último comando encolado
+
+  // Cola de comandos con ACK
+  const queueRef = useRef([]); // Array de {ch: string, retries: number}
+  const processingRef = useRef(false);
+  const ackResolveRef = useRef(null); // Resolver promise de ACK
+  const ackTimeoutRef = useRef(null);
 
   // Constantes de velocidad
   const MAX_SPEED = 9;
   const MIN_SPEED = 0;
-  const INTER_COMMAND_DELAY = 30; // 30ms entre comandos para no saturar buffer GATT
+  const INTER_COMMAND_DELAY = 10; // Reducido a 10ms - MTU mayor permite más throughput
+  const ACK_TIMEOUT = 500; // Aumentado a 500ms - el Arduino puede estar ocupado procesando
+  const MAX_RETRIES = 2; // Reintentos máximos por comando
 
   // Función helper para resetear todas las teclas y enviar STOP
   const resetAllKeys = useCallback(() => {
     const wasMovementActive = movementActive.current;
     keyHeld.current = {};
     movementActive.current = false;
+    currentToggleCommand.current = null; // Limpiar comando toggle
 
     // Solo enviar STOP si había movimiento activo
     if (wasMovementActive) {
@@ -51,15 +65,148 @@ export function useBLE() {
   const updateUI = useCallback((isConnected) => {
     setConnected(isConnected);
     if (!isConnected) {
-      deviceRef.current = null;
-      charRef.current = null;
+      // Limpiar estado al desconectar
+      queueRef.current = [];
+      processingRef.current = false;
       keyHeld.current = {};
-      writeInProgress.current = false;
-      pendingCommand.current = null;
       movementActive.current = false;
+
+      if (ackTimeoutRef.current) {
+        clearTimeout(ackTimeoutRef.current);
+        ackTimeoutRef.current = null;
+      }
+      if (ackResolveRef.current) {
+        ackResolveRef.current = null;
+      }
     }
   }, []);
 
+  // Handler de ACK recibido por notificación
+  const handleAck = useCallback((ack) => {
+    console.debug('📨 ACK recibido:', ack);
+    if (ackResolveRef.current) {
+      ackResolveRef.current(ack);
+      ackResolveRef.current = null;
+      if (ackTimeoutRef.current) {
+        clearTimeout(ackTimeoutRef.current);
+        ackTimeoutRef.current = null;
+      }
+    } else {
+      console.debug('⚠️ ACK sin espera activa');
+    }
+  }, []);
+
+  // Procesar cola de comandos con ACK
+  const processQueue = useCallback(async () => {
+    if (processingRef.current) return;
+    const c = charRef.current;
+    if (!c) return;
+
+    processingRef.current = true;
+
+    while (queueRef.current.length > 0) {
+      const item = queueRef.current.shift();
+      const cmd = item.ch;
+      let sent = false;
+      let attempt = item.retries;
+
+      while (!sent && attempt <= MAX_RETRIES) {
+        try {
+          // Enviar comando via GATT
+          const buf = new TextEncoder().encode(cmd);
+          await c.writeValue(buf);
+
+          // Esperar ACK con timeout
+          const ackPromise = new Promise((resolve, reject) => {
+            ackResolveRef.current = resolve;
+            ackTimeoutRef.current = setTimeout(() => {
+              ackResolveRef.current = null;
+              reject(new Error('ACK timeout'));
+            }, ACK_TIMEOUT);
+          });
+
+          const ack = await ackPromise;
+
+          // Validar ACK (debe coincidir con comando enviado)
+          if (ack && ack[0] === cmd) {
+            sent = true;
+            setLastCommand(cmd);
+            setCommandHistory((prev) => {
+              const newHistory = [...prev, cmd];
+              return newHistory.slice(-10);
+            });
+            console.debug('✅ Comando confirmado:', cmd);
+          } else {
+            throw new Error(`ACK mismatch: esperado ${cmd}, recibido ${ack}`);
+          }
+        } catch (err) {
+          attempt++;
+          console.warn(
+            `⚠️ Envío de ${cmd} falló (intento ${attempt}/${MAX_RETRIES + 1}):`,
+            err.message
+          );
+          if (attempt > MAX_RETRIES) {
+            console.error(`❌ Descartando comando ${cmd} tras ${MAX_RETRIES} reintentos`);
+          } else {
+            // Backoff antes de reintentar
+            await new Promise((r) => setTimeout(r, 50));
+          }
+        }
+      }
+
+      // Pequeño delay entre comandos exitosos
+      if (sent && queueRef.current.length > 0) {
+        await new Promise((r) => setTimeout(r, INTER_COMMAND_DELAY));
+      }
+    }
+
+    processingRef.current = false;
+  }, []);
+
+  // Encolar comando (reemplaza a sendCommand para uso normal)
+  const enqueueCommand = useCallback(
+    (ch) => {
+      // 🚨 RATE LIMIT: No permitir más de 1 comando cada 50ms
+      // Previene spam de teclas que causa "GATT operation already in progress"
+      const now = Date.now();
+      const timeSinceLastEnqueue = now - lastEnqueueTime.current;
+      if (timeSinceLastEnqueue < 50 && ch !== 'X') {
+        console.debug(`⏱️ Rate limit: ignorando ${ch} (${timeSinceLastEnqueue}ms desde último)`);
+        return;
+      }
+      lastEnqueueTime.current = now;
+
+      // 🚨 PROTECCIÓN: Si hay demasiados comandos en cola, ignorar
+      // Esto previene "GATT operation already in progress" por spam de teclas
+      if (queueRef.current.length >= 5) {
+        console.warn(`⚠️ Cola saturada (${queueRef.current.length} comandos) - ignorando ${ch}`);
+        return;
+      }
+
+      // Prioridad a STOP: si es 'X', limpia la cola y lo pone al frente
+      if (ch === 'X') {
+        queueRef.current = [{ ch, retries: 0 }];
+        console.debug('🛑 STOP prioritario encolado - cola limpiada');
+      } else {
+        // Evitar duplicados: solo encolar si es diferente al último comando en cola
+        const lastInQueue = queueRef.current[queueRef.current.length - 1];
+        if (!lastInQueue || lastInQueue.ch !== ch) {
+          queueRef.current.push({ ch, retries: 0 });
+          console.debug(`📥 Comando ${ch} encolado (cola: ${queueRef.current.length})`);
+        } else {
+          console.debug(`⏭️ Comando ${ch} duplicado - ignorado (ya en cola)`);
+        }
+      }
+
+      // Iniciar procesamiento si no está activo
+      if (!processingRef.current) {
+        processQueue();
+      }
+    },
+    [processQueue]
+  );
+
+  // sendCommand original - mantener para compatibilidad o emergencias
   const sendCommand = useCallback(async (ch) => {
     const c = charRef.current;
     if (!c) {
@@ -135,10 +282,24 @@ export function useBLE() {
       const service = await server.getPrimaryService(SERVICE_UUID);
       const characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
       charRef.current = characteristic;
+
+      // Suscribirse a la característica NOTIFY para recibir ACKs
+      const characteristicNotify = await service.getCharacteristic(NOTIFY_UUID);
+      charNotifyRef.current = characteristicNotify;
+      await characteristicNotify.startNotifications();
+      characteristicNotify.addEventListener('characteristicvaluechanged', (event) => {
+        const value = event.target.value;
+        if (value && value.byteLength > 0) {
+          const ack = new TextDecoder().decode(value);
+          handleAck(ack);
+        }
+      });
+      console.log('✅ Suscrito a notificaciones ACK');
+
       updateUI(true);
 
-      // Enviar velocidad inicial
-      await sendCommand(String(speedLevel));
+      // Enviar velocidad inicial usando la cola
+      enqueueCommand(String(speedLevel));
     } catch (err) {
       console.error('Error al conectar BLE:', err);
       if (err.name === 'NotFoundError') {
@@ -153,7 +314,7 @@ export function useBLE() {
       }
       updateUI(false);
     }
-  }, [updateUI, sendCommand, speedLevel]);
+  }, [updateUI, handleAck, enqueueCommand, speedLevel]);
 
   const disconnectBle = useCallback(() => {
     const d = deviceRef.current;
@@ -167,10 +328,10 @@ export function useBLE() {
       const newSpeed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, speedLevel + delta));
       if (newSpeed !== speedLevel) {
         setSpeedLevel(newSpeed);
-        sendCommand(String(newSpeed));
+        enqueueCommand(String(newSpeed));
       }
     },
-    [connected, speedLevel, sendCommand]
+    [connected, speedLevel, enqueueCommand]
   );
 
   const isAnyMovementKeyPressed = useCallback(() => {
@@ -196,6 +357,27 @@ export function useBLE() {
 
       // 1. Manejo de Movimiento (W, A, S, D)
       if (isMovementKey) {
+        // MODO TOGGLE: Un solo click inicia movimiento, otro click lo detiene
+        if (controlMode === 'toggle') {
+          // Si ya hay un comando activo, detenerlo
+          if (currentToggleCommand.current) {
+            currentToggleCommand.current = null;
+            movementActive.current = false;
+            console.log(`🔄 Modo Toggle: Deteniendo`);
+            enqueueCommand('X');
+          }
+          // Si no hay comando activo, iniciar este
+          else {
+            currentToggleCommand.current = command;
+            movementActive.current = true;
+            console.log(`🔄 Modo Toggle: Iniciando ${key.toUpperCase()}`);
+            enqueueCommand(command);
+          }
+          event.preventDefault();
+          return;
+        }
+
+        // MODO HOLD (comportamiento actual)
         if (keyHeld.current[key]) {
           console.debug(`⏭️ Tecla ${key.toUpperCase()} ya presionada - ignorando repetición`);
           return; // Ya está presionado
@@ -204,7 +386,7 @@ export function useBLE() {
         // Indicar que hay una acción de movimiento activa en el cliente
         movementActive.current = true;
         console.log(`▶️ Tecla ${key.toUpperCase()} presionada`);
-        sendCommand(command);
+        enqueueCommand(command);
         event.preventDefault(); // Evita scroll de la página
       }
       // 2. Manejo de Pinza (Q, E)
@@ -212,7 +394,7 @@ export function useBLE() {
         // Pinza: Acción única, no de 'hold', pero prevenimos repetición accidental
         if (keyHeld.current[key]) return;
         keyHeld.current[key] = true;
-        sendCommand(command);
+        enqueueCommand(command);
       }
       // 3. Manejo de Velocidad (Flechas Arriba/Abajo)
       else if (event.key === 'ArrowUp') {
@@ -223,12 +405,15 @@ export function useBLE() {
         event.preventDefault();
       }
     },
-    [connected, sendCommand, changeSpeed, resetAllKeys]
+    [connected, enqueueCommand, changeSpeed, resetAllKeys, controlMode]
   );
 
   const handleKeyUp = useCallback(
     (event) => {
       if (!connected) return;
+
+      // En modo toggle, keyup no hace nada (se controla solo con keydown)
+      if (controlMode === 'toggle') return;
 
       const key = (event.key || '').toLowerCase();
       const isMovementKey = ['w', 'a', 's', 'd'].includes(key);
@@ -241,12 +426,13 @@ export function useBLE() {
         }
         keyHeld.current[key] = false;
         console.log(`⏸️ Tecla ${key.toUpperCase()} liberada`);
+
         // Enviar 'X' (STOP) solo si NINGUNA otra tecla de movimiento está actualmente presionada
         if (!isAnyMovementKeyPressed() && movementActive.current) {
           // Solo enviar STOP si realmente había movimiento activo
           movementActive.current = false;
           console.log(`🛑 Enviando STOP - ninguna tecla de movimiento activa`);
-          sendCommand('X');
+          enqueueCommand('X');
         } else if (isAnyMovementKeyPressed()) {
           const activeKeys = Object.keys(keyHeld.current).filter((k) => keyHeld.current[k]);
           console.log(`⏩ Otras teclas aún activas: ${activeKeys.join(', ').toUpperCase()}`);
@@ -257,9 +443,8 @@ export function useBLE() {
         keyHeld.current[key] = false;
       }
     },
-    [connected, sendCommand, isAnyMovementKeyPressed]
+    [connected, enqueueCommand, isAnyMovementKeyPressed, controlMode]
   );
-
   const handleButtonDown = useCallback(
     (key) => {
       if (!connected) return;
@@ -275,9 +460,9 @@ export function useBLE() {
       if (['w', 'a', 's', 'd'].includes(key)) {
         movementActive.current = true;
       }
-      sendCommand(command);
+      enqueueCommand(command);
     },
-    [connected, sendCommand]
+    [connected, enqueueCommand]
   );
 
   const handleButtonUp = useCallback(
@@ -293,17 +478,33 @@ export function useBLE() {
       // 3. Enviar STOP ('X') si no queda ninguna tecla/botón de movimiento activo.
       if (!isAnyMovementKeyPressed() && movementActive.current) {
         movementActive.current = false;
-        sendCommand('X');
+        enqueueCommand('X');
       }
     },
-    [connected, sendCommand, isAnyMovementKeyPressed]
+    [connected, enqueueCommand, isAnyMovementKeyPressed]
   );
+
+  const toggleControlMode = useCallback(() => {
+    // Antes de cambiar de modo, detener cualquier movimiento activo
+    if (movementActive.current) {
+      resetAllKeys();
+    }
+
+    setControlMode((prev) => {
+      const newMode = prev === 'hold' ? 'toggle' : 'hold';
+      console.log(
+        `🎮 Modo de control cambiado a: ${newMode === 'hold' ? 'Press & Hold' : 'Toggle'}`
+      );
+      return newMode;
+    });
+  }, [resetAllKeys]);
 
   return {
     connected,
     speedLevel,
     lastCommand,
     commandHistory,
+    controlMode,
     connectBle,
     disconnectBle,
     changeSpeed,
@@ -311,7 +512,9 @@ export function useBLE() {
     handleKeyUp,
     handleButtonDown,
     handleButtonUp,
-    sendCommand,
+    sendCommand, // Mantener para compatibilidad
+    enqueueCommand, // Nueva función con cola y ACK
     resetAllKeys,
+    toggleControlMode,
   };
 }

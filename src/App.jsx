@@ -12,6 +12,7 @@ export default function App() {
     speedLevel,
     lastCommand,
     commandHistory,
+    controlMode,
     connectBle,
     disconnectBle,
     changeSpeed,
@@ -21,6 +22,7 @@ export default function App() {
     handleButtonUp,
     sendCommand,
     resetAllKeys,
+    toggleControlMode,
   } = useBLE();
 
   useEffect(() => {
@@ -77,6 +79,15 @@ export default function App() {
               onConnect={connectBle}
               onDisconnect={disconnectBle}
             />
+            <button
+              onClick={toggleControlMode}
+              className="mode-toggle-btn"
+              title={
+                controlMode === 'hold' ? 'Cambiar a Modo Toggle' : 'Cambiar a Modo Press & Hold'
+              }
+            >
+              🎮 {controlMode === 'hold' ? 'Press & Hold' : 'Toggle'}
+            </button>
           </div>
 
           <div className="header-center">

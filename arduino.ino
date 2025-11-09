@@ -18,6 +18,7 @@ const bool SENSOR_ULTRASONICO_CONECTADO = false;
 // UUIDs del Servicio y la Característica para la comunicación
 #define SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+#define NOTIFY_UUID "12345678-1234-5678-1234-56789abcdef0" // Característica para ACK
 
 // --- VARIABLES GLOBALES DEL SISTEMA ---
 #define TRIG_PIN 10 // Pin Trig del HC-SR04
@@ -58,7 +59,12 @@ long duracion;
 // Punteros y estado BLE
 BLEServer *pServer = NULL;
 BLECharacteristic *pCharacteristic = NULL;
+BLECharacteristic *pCharacteristicNotify = NULL; // Para enviar ACKs
 bool deviceConnected = false;
+
+// Variables para ACK
+volatile bool ackRequested = false;
+char lastReceivedForAck = 0;
 
 // --- CALLBACKS BLE ESTÁNDAR ---
 
@@ -82,27 +88,21 @@ class MyCallbacks : public BLECharacteristicCallbacks
 {
   void onWrite(BLECharacteristic *pCharacteristic)
   {
-
-    // Extraer los datos crudos del paquete BLE
-    std::string rxValue;
+    // Handler MÍNIMO - no hacer trabajo pesado aquí
     const uint8_t *dataPtr = pCharacteristic->getData();
     size_t len = pCharacteristic->getLength();
 
     if (len > 0 && dataPtr)
     {
-      rxValue = std::string((char *)dataPtr, len);
-    }
+      char cmd = ((char *)dataPtr)[0];
 
-    if (rxValue.length() > 0)
-    {
-      // Simplificado: solo guardar el último comando
-      // Si llega uno nuevo mientras procesamos, se sobrescribe
-      btSignal = rxValue[0];
+      // Guardar comando rápidamente
+      btSignal = cmd;
       newSignalReceived = true;
 
-      Serial.print("BLE recibido: '");
-      Serial.print(btSignal);
-      Serial.println("'");
+      // Marcar que hay que enviar ACK (se hace en loop)
+      lastReceivedForAck = cmd;
+      ackRequested = true;
     }
   }
 };
@@ -201,28 +201,45 @@ void setup()
 {
   Serial.begin(9600);
 
-  // Inicialización de BLE
+  // Inicialización de BLE con parámetros optimizados
   BLEDevice::init("ADCA07");
+
+  // Aumentar potencia de transmisión para mejor estabilidad
   BLEDevice::setPower(ESP_PWR_LVL_P9);
+
+  // Configurar MTU mayor para reducir overhead (hasta 517 bytes en ESP32)
+  BLEDevice::setMTU(517);
 
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
   BLEService *pService = pServer->createService(SERVICE_UUID);
 
+  // Característica WRITE con WRITE_NO_RESPONSE para mayor throughput
   pCharacteristic = pService->createCharacteristic(
       CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_WRITE);
+      BLECharacteristic::PROPERTY_WRITE_NR | BLECharacteristic::PROPERTY_WRITE);
   pCharacteristic->setCallbacks(new MyCallbacks());
   pCharacteristic->addDescriptor(new BLE2902());
+
+  // Característica NOTIFY para enviar ACKs al cliente
+  pCharacteristicNotify = pService->createCharacteristic(
+      NOTIFY_UUID,
+      BLECharacteristic::PROPERTY_NOTIFY);
+  pCharacteristicNotify->addDescriptor(new BLE2902());
 
   pService->start();
 
   BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
   pAdvertising->addServiceUUID(SERVICE_UUID);
   pAdvertising->setScanResponse(true);
+
+  // Parámetros de conexión optimizados para baja latencia
+  pAdvertising->setMinPreferred(0x06); // 7.5ms min interval
+  pAdvertising->setMaxPreferred(0x12); // 22.5ms max interval
+
   BLEDevice::startAdvertising();
-  Serial.println("BLE Advertising Started (Pila Estándar)");
+  Serial.println("BLE Advertising Started (Optimizado para baja latencia)");
 
   // Configuración de pines de motor, servo y sensor
   pinMode(enA, OUTPUT);
@@ -267,8 +284,9 @@ void loop()
   {
     newSignalReceived = false; // Marcar como procesado
 
-    Serial.print("Procesando: ");
-    Serial.println(btSignal);
+    // Log opcional - COMENTADO para máximo rendimiento
+    // Serial.print("Procesando: ");
+    // Serial.println(btSignal);
 
     // 1. LÓGICA DE VELOCIDAD
     if (btSignal == '0')
@@ -299,11 +317,13 @@ void loop()
     {
       bool obstaculoCerca = false;
 
+      // ⚠️ IMPORTANTE: Solo medir distancia si el sensor está conectado
+      // De lo contrario, pulseIn() bloqueará el loop por 20ms esperando una respuesta
       if (SENSOR_ULTRASONICO_CONECTADO)
       {
         distancia = medirDistancia();
         // Si distancia es 0 (timeout) o <= 15cm, consideramos obstáculo
-        if (distancia <= 15)
+        if (distancia <= 15 && distancia > 0)
         {
           obstaculoCerca = true;
         }
@@ -311,7 +331,7 @@ void loop()
 
       if (obstaculoCerca)
       {
-        Serial.println("¡OBSTÁCULO DETECTADO! Deteniendo.");
+        // Serial.println("¡OBSTÁCULO DETECTADO! Deteniendo.");
         stop();
         // NO hacemos maniobra de evasión automática (delays bloqueantes)
         // El usuario debe controlar manualmente
@@ -350,6 +370,19 @@ void loop()
     else if (btSignal == 'X')
     {
       stop();
+    }
+
+    // ✅ ENVIAR ACK DESPUÉS DE PROCESAR (no antes)
+    if (ackRequested && pCharacteristicNotify && deviceConnected)
+    {
+      uint8_t ack = (uint8_t)lastReceivedForAck;
+      pCharacteristicNotify->setValue(&ack, 1);
+      pCharacteristicNotify->notify();
+      ackRequested = false;
+
+      // Log opcional - COMENTADO para máximo rendimiento
+      // Serial.print("ACK enviado: ");
+      // Serial.println((char)ack);
     }
   }
 }
