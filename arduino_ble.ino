@@ -65,6 +65,8 @@ bool deviceConnected = false;
 // Variables para ACK
 volatile bool ackRequested = false;
 char lastReceivedForAck = 0;
+// Flag que indica si el sensor detecta un obstáculo en medición continua
+bool obstacleDetected = false;
 
 // --- CALLBACKS BLE ESTÁNDAR ---
 
@@ -262,6 +264,34 @@ void setup()
 
 void loop()
 {
+  // Monitorización continua del sensor ultrasónico: si está conectado,
+  // medir periódicamente y detener el robot inmediatamente si hay obstáculo.
+  if (SENSOR_ULTRASONICO_CONECTADO)
+  {
+    distancia = medirDistancia();
+    if (distancia > 0 && distancia <= 30)
+    {
+      if (!obstacleDetected)
+      {
+        obstacleDetected = true;
+        // Solo detener automáticamente si la acción actual es avanzar
+        // o no hay acción (X). Permitir retroceder o girar manualmente.
+        if (btSignal == 'W' || btSignal == 'X')
+        {
+          stop();
+          Serial.println("⚠️ OBSTÁCULO: Detenido (medición continua)");
+        }
+        else
+        {
+          Serial.println("⚠️ OBSTÁCULO: detectado, permitiendo maniobra manual");
+        }
+      }
+    }
+    else
+    {
+      obstacleDetected = false;
+    }
+  }
   // Actualizar servo de forma no bloqueante
   if (millis() - lastServoUpdate >= SERVO_DELAY)
   {
@@ -312,33 +342,16 @@ void loop()
 
     // 2. LÓGICA DE MOVIMIENTO / PINZA
 
-    // COMANDO W (ADELANTE): Incluye la lógica condicional del sensor.
+    // COMANDO W (ADELANTE): Respetar la monitorización continua del sensor.
     if (btSignal == 'W')
     {
-      bool obstaculoCerca = false;
-
-      // ⚠️ IMPORTANTE: Solo medir distancia si el sensor está conectado
-      // De lo contrario, pulseIn() bloqueará el loop por 20ms esperando una respuesta
-      if (SENSOR_ULTRASONICO_CONECTADO)
+      if (SENSOR_ULTRASONICO_CONECTADO && obstacleDetected)
       {
-        distancia = medirDistancia();
-        // Si distancia es 0 (timeout) o <= 15cm, consideramos obstáculo
-        if (distancia <= 15 && distancia > 0)
-        {
-          obstaculoCerca = true;
-        }
-      }
-
-      if (obstaculoCerca)
-      {
-        // Serial.println("¡OBSTÁCULO DETECTADO! Deteniendo.");
+        // Si el sensor está habilitado y detectó obstáculo, mantener detenido
         stop();
-        // NO hacemos maniobra de evasión automática (delays bloqueantes)
-        // El usuario debe controlar manualmente
       }
       else
       {
-        // Si no hay obstáculo (o la evasión está deshabilitada), avanzar normalmente
         forward();
       }
     }
