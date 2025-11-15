@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { ConnectionPanel } from '../components/ConnectionPanel';
 import { SpeedPanel } from '../components/SpeedPanel';
 import { MovementPanel } from '../components/MovementPanel';
-import { GripperPanel } from '../components/GripperPanel';
 import { CommandMonitor } from '../components/CommandMonitor';
 import { ModeSelector } from '../components/ModeSelector';
 
@@ -135,17 +134,11 @@ export default function ControlPage() {
         </div>
 
         <div className="remote-body">
-          <div className="movement-section">
-            <MovementPanel
-              connected={connected}
-              onButtonDown={handleButtonDown}
-              onButtonUp={handleButtonUp}
-            />
-          </div>
-
-          <div className="gripper-section">
-            <GripperPanel connected={connected} onSendCommand={enqueueCommand} />
-          </div>
+          <MovementPanel
+            connected={connected}
+            onButtonDown={handleButtonDown}
+            onButtonUp={handleButtonUp}
+          />
         </div>
       </div>
     </div>

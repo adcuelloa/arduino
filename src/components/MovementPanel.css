@@ -50,14 +50,14 @@
 /* D-Pad Grid */
 .movement-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
   gap: clamp(0.3rem, 0.8dvmin, 0.6rem);
   /* Mantener aspecto cuadrado siempre */
   aspect-ratio: 1 / 1;
   /* Crecer proporcionalmente con el contenedor, respetando el aspect ratio */
   height: min(90%, 55dvmin);
-  width: auto;
+  width: 100%;
   /* Centrado y responsivo */
   place-self: center;
 }
@@ -81,33 +81,95 @@
   max-height: 100%;
 }
 
+.btn-gripper-open,
+.btn-gripper-close {
+  background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Centrar y limitar al tamaño de la celda */
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  place-self: center;
+  max-width: 100%;
+  max-height: 100%;
+}
+
 /* Posiciones del D-Pad */
 .btn-w {
-  grid-column: 2;
-  grid-row: 1;
+  grid-column: 1 / span 2;
+  grid-row: 1 / span 2;
 }
 
 .btn-a {
-  grid-column: 1;
-  grid-row: 2;
+  grid-column: 4;
+  grid-row: 1 / span 4;
 }
 
 .btn-s {
-  grid-column: 2;
-  grid-row: 3;
+  grid-column: 1 / span 2;
+  grid-row: 3 / span 2;
 }
 
 .btn-d {
+  grid-column: 5;
+  grid-row: 1 / span 4;
+}
+
+.btn-gripper-open {
   grid-column: 3;
-  grid-row: 2;
+  grid-row: 1 / span 1;
+}
+
+.btn-gripper-close {
+  grid-column: 3;
+  grid-row: 2 / span 1;
+}
+
+/* Texto descriptivo */
+.gripper-button-text {
+  font-size: clamp(0.625rem, 1.8dvmin, 1rem);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+
+.btn-stop::after {
+  content: 'STOP';
+}
+
+.btn-gripper-open {
+  background: linear-gradient(135deg, #06d6a0 0%, #04a777 100%);
+}
+
+.btn-gripper-open:hover:not(:disabled) {
+  background: linear-gradient(135deg, #04a777 0%, #038866 100%);
+  box-shadow:
+    0 8px 20px rgba(6, 214, 160, 0.4),
+    inset 0 2px 6px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.btn-gripper-close {
+  background: linear-gradient(135deg, #e63946 0%, #c92a35 100%);
+}
+
+.btn-gripper-close:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c92a35 0%, #a61e2a 100%);
+  box-shadow:
+    0 8px 20px rgba(230, 57, 70, 0.4),
+    inset 0 2px 6px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* Botón STOP central - rojo grande */
 .btn-stop {
-  grid-column: 2;
-  grid-row: 2;
   background: linear-gradient(135deg, #e63946 0%, #c92a35 100%);
   font-size: clamp(0.75rem, 2dvmin, 1.25rem);
+  width: 100%;
+  height: 100%;
   font-weight: 900;
   letter-spacing: 0.05em;
   box-shadow:
@@ -116,12 +178,9 @@
     inset 0 -2px 5px rgba(0, 0, 0, 0.4);
   border: clamp(1px, 0.2dvmin, 2px) solid rgba(255, 255, 255, 0.15);
   /* Centrar y limitar al tamaño de la celda */
-  width: 100%;
-  height: 100%;
   aspect-ratio: 1;
   place-self: center;
-  max-width: 100%;
-  max-height: 100%;
+  grid-row: 3 / span 2;
 }
 
 .btn-stop:hover:not(:disabled) {
@@ -172,9 +231,6 @@
 }
 .btn-d::after {
   content: '▶';
-}
-.btn-stop::after {
-  content: 'STOP';
 }
 
 /* Responsive */

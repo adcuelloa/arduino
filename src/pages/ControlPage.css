@@ -181,8 +181,7 @@
 
 /* ===== BODY: Controles principales ===== */
 .remote-body {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  display: flex;
   gap: clamp(0.5rem, 1.5dvmin, 1.5rem);
   min-height: 0;
   height: 100%;
@@ -194,8 +193,7 @@
   justify-items: stretch;
 }
 
-.movement-section,
-.gripper-section {
+.movement-section {
   /* Simplificar: solo son contenedores que pasan el 100% a sus hijos */
   display: contents;
 }
@@ -206,7 +204,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: clamp(0.5rem, 1.5dvmin, 1rem);
   font-weight: 700;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
@@ -299,11 +297,6 @@
 
 /* Para viewports muy estrechos (menor a 400px de ancho) */
 @media (max-width: 400px) {
-  .remote-body {
-    grid-template-columns: 1fr; /* Stack en una columna */
-    grid-template-rows: 1.4fr 1fr;
-  }
-
   .remote-control {
     aspect-ratio: 9 / 16; /* Cambiar a vertical */
   }
@@ -315,8 +308,7 @@
     gap: clamp(0.3rem, 1dvmin, 0.75rem);
   }
 
-  .movement-panel,
-  .gripper-panel {
+  .movement-panel {
     padding: clamp(0.5rem, 1dvmin, 1rem);
     gap: clamp(0.3rem, 1dvmin, 0.75rem);
   }
@@ -331,7 +323,6 @@
 /* Optimización para tablets landscape */
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
   .remote-body {
-    grid-template-columns: 1.5fr 1fr;
     gap: clamp(0.75rem, 2dvmin, 1.5rem);
   }
 }

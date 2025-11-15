@@ -32,6 +32,32 @@ export function MovementPanel({ connected, onButtonDown, onButtonUp }) {
           aria-label="Mover hacia adelante"
           disabled={!connected}
         />
+        <button
+          className="btn-control btn-gripper-open"
+          onClick={() => onSendCommand('Q')}
+          aria-label="Abrir pinza"
+          disabled={!connected}
+        >
+          <span className="gripper-emoji">🤏</span>
+          <span className="gripper-button-text">ABRIR</span>
+        </button>
+        <button
+          className="btn-control btn-gripper-close"
+          onClick={() => onSendCommand('E')}
+          aria-label="Cerrar pinza"
+          disabled={!connected}
+        >
+          <span className="gripper-emoji">✊</span>
+          <span className="gripper-button-text">CERRAR</span>
+        </button>
+
+        {/* Centro STOP */}
+        <button
+          className="btn-control btn-stop"
+          onClick={() => onButtonDown('x')}
+          aria-label="Detener movimiento"
+          disabled={!connected}
+        />
 
         {/* Izquierda (A) */}
         <button
@@ -52,14 +78,6 @@ export function MovementPanel({ connected, onButtonDown, onButtonUp }) {
             onButtonUp('a');
           }}
           aria-label="Girar a la izquierda"
-          disabled={!connected}
-        />
-
-        {/* Centro STOP */}
-        <button
-          className="btn-control btn-stop"
-          onClick={() => onButtonDown('x')}
-          aria-label="Detener movimiento"
           disabled={!connected}
         />
 
